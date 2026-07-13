@@ -1,10 +1,9 @@
-# HakuNeko
+# HakuNeko (HaruNeko)
 :toc:
 :toc-placement!:
 :numbered:
 :icons: font
 :linkattrs:
-:imagesdir: ./res
 ifdef::env-github[]
 :tip-caption: :bulb:
 :note-caption: :information_source:
@@ -13,28 +12,157 @@ ifdef::env-github[]
 :warning-caption: :warning:
 endif::[]
 
-Prototype of HakuNeko based on Electron/NW.js + TypeScript + Vite
+Prototype of **HakuNeko** based on Electron / NW.js + TypeScript + Vite.
 
-image:https://img.shields.io/github/downloads-pre/manga-download/haruneko/latest/total?color=blue&label=Download%20HaruNeko%20%28Nightly%29&logo=github[link=https://github.com/manga-download/haruneko/releases, title="Download the latest pre-release (nightly build) of HaruNeko", window="_blank"]
+Manga, anime, and novel downloader that runs as a desktop client and loads the web application engine.
 
 toc::[]
 
 ---
 
 ## Status
-////
-This section shows the latest build and test results for the master branch.
 
-image:https://img.shields.io/github/downloads/manga-download/haruneko/latest/total?label=HaruNeko%20%28Stable%29&logo=github[link=https://github.com/manga-download/haruneko/releases/latest, title="Download the latest stable release of HaruNeko", window="_blank"]
-////
-image:https://img.shields.io/github/downloads-pre/manga-download/haruneko/latest/total?color=blue&label=HaruNeko%20%28Nightly%29&logo=github[link=https://github.com/manga-download/haruneko/releases, title="Download the latest pre-release (nightly build) of HaruNeko", window="_blank"]
-image:https://github.com/manga-download/haruneko/actions/workflows/continuous-deployment.yml/badge.svg[link=https://github.com/manga-download/haruneko/actions/workflows/continuous-deployment.yml, title="Continuous Deployment", window="_blank"]
-image:https://app.codacy.com/project/badge/Grade/814f4127d85245e0a763f13a901ba1b4[link=https://app.codacy.com/gh/manga-download/haruneko/dashboard, title="Code Quality Gate", window="_blank"]
-image:https://badges.crowdin.net/hakuneko/localized.svg[link=https://crowdin.com/project/hakuneko, title="Crowdin Translation", window="_blank"]
+Upstream project: https://github.com/manga-download/haruneko[manga-download/haruneko]
+
+This repository is a working fork maintained at https://github.com/cruelplatypus67/hakuneko[cruelplatypus67/hakuneko].
+
+image:https://img.shields.io/github/downloads-pre/manga-download/haruneko/latest/total?color=blue&label=HaruNeko%20%28Upstream%20Nightly%29&logo=github[link=https://github.com/manga-download/haruneko/releases, title="Upstream nightly builds", window="_blank"]
+image:https://github.com/manga-download/haruneko/actions/workflows/continuous-deployment.yml/badge.svg[link=https://github.com/manga-download/haruneko/actions/workflows/continuous-deployment.yml, title="Upstream continuous deployment", window="_blank"]
 
 ## Documentation
 
 image:https://img.shields.io/badge/-read-blue?logo=html5&label=User%20Manual[link=https://docs.hakuneko.download/user-manual/, title="User Manual (online)", window="_blank"]
 image:https://img.shields.io/badge/-edit-red?logo=github&label=User%20Manual[link=https://github.com/manga-download/haruneko/tree/master/docs/user-manual, title="User Manual (source)", window="_blank"]
-image:https://img.shields.io/badge/-read-blue?logo=html5&label=Development%20Guide[link=https://docs.hakuneko.download/development-guide/, title="User Manual (online)", window="_blank"]
-image:https://img.shields.io/badge/-edit-red?logo=github&label=Development%20Guide[link=https://github.com/manga-download/haruneko/tree/master/docs/development-guide, title="User Manual (source)", window="_blank"]
+image:https://img.shields.io/badge/-read-blue?logo=html5&label=Development%20Guide[link=https://docs.hakuneko.download/development-guide/, title="Development Guide (online)", window="_blank"]
+image:https://img.shields.io/badge/-edit-red?logo=github&label=Development%20Guide[link=https://github.com/manga-download/haruneko/tree/master/docs/development-guide, title="Development Guide (source)", window="_blank"]
+
+Local setup guide: link:docs/development-guide/setup-environment.md[docs/development-guide/setup-environment.md]
+
+## Requirements
+
+* **Node.js** `>= 22.13.0`
+* **npm** `>= 10.9.2`
+* Git
+
+## Quick start
+
+[source,bash]
+----
+git clone https://github.com/cruelplatypus67/hakuneko.git
+cd hakuneko
+npm install
+----
+
+=== Development
+
+[source,bash]
+----
+# Terminal 1 — host the web app with hot reload
+npm run serve:dev --workspace web
+
+# Terminal 2 — desktop shell pointed at localhost:3000
+npm run launch:dev --workspace app/electron
+# or: npm run launch:dev --workspace app/nw
+----
+
+=== Checks and tests
+
+[source,bash]
+----
+npm run check          # TypeScript, ESLint, Svelte/Vue checks
+npm run test           # Unit / component tests
+npm run test:e2e       # End-to-end (builds workspaces first)
+----
+
+=== Package desktop builds (macOS host)
+
+Builds a **Windows x64** portable ZIP and a **macOS arm64** DMG into `dist/`, then removes intermediate Electron redistributables.
+
+[source,bash]
+----
+npm run package:win-mac
+# equivalent: node scripts/package-win-mac.mjs
+----
+
+Options:
+
+* `--skip-install` — skip `npm install`
+* `--no-cleanup` — keep temp redists and `app/electron/build`
+
+NOTE: Off-Windows packaging skips `rcedit` icon/version stamping (Windows-only tool). The ZIP remains runnable as `hakuneko-electron.exe`.
+
+## Project layout
+
+[cols="1,3",options="header"]
+|===
+| Path | Role
+
+| `web/`
+| Vite web application (engine + frontends)
+
+| `app/electron/`
+| Electron desktop client
+
+| `app/nw/`
+| NW.js desktop client
+
+| `docs/`
+| VitePress user manual and development guide
+
+| `scripts/package-win-mac.mjs`
+| Targeted Windows x64 + macOS arm64 packager
+
+| `git.md`
+| Local contribution rule: commit after every task
+|===
+
+## Security review notes
+
+A source review was performed on this tree for hidden malware-style behavior (install hooks, obfuscated C2, credential theft, miners, unexpected outbound exfiltration). Summary:
+
+=== What looks intentional / expected for this app
+
+* **Scraping desktop shell** — Electron sets `webSecurity: false` to bypass CORS for site fetches. `nodeIntegration` is **off** and `contextIsolation` is **on** in the main window config (`app/electron/src/Main.ts`).
+* **Remote web app origins** — Client manifests allow `node-remote` for `app.hakuneko.download`, `*.hakuneko.workers.dev`, and localhost. The default packaged client loads the hosted app URL, not only local files.
+* **Obfuscated modules** (high scrutiny, domain-specific purpose):
+  ** `web/src/engine/platform/AntiScrapingDetection.js` — bot / challenge detection helpers
+  ** `web/src/engine/websites/*.DRM.js` — site-specific image/DRM descramblers (e.g. Bilibili, Comikey, MangaGo)
+  These are heavily obfuscated (string encoding + control-flow packing). Readable exports match downloader use (e.g. `DRMProvider`, fetch redirection enums), not a general reverse shell. Treat them as **opaque third-party-style blobs**: re-audit on every update.
+* **Ad / tracker blocking** — `BloatGuard` blocks many ad and analytics hosts (including Google Analytics and Sentry), which reduces drive-by noise from manga sites.
+* **Local RPC** — Optional websocket RPC (`app/src/rpc/Server.ts`) is gated by origin allowlist + SHA-256 token of a user secret. Weak secrets would allow local automation tools to control the instance.
+* **`postinstall`** — Only runs Electron once to print its version (`--no-sandbox --version`). No download-and-execute of unrelated payloads observed.
+
+=== Risks and weaknesses (not “hidden malware”, but real)
+
+[cols="1,3",options="header"]
+|===
+| Risk | Detail
+
+| Trust of hosted app
+| Production clients talk to `https://app.hakuneko.download` and related `hakuneko.*` hosts. Compromise of those assets is high impact.
+
+| Obfuscated DRM / anti-bot JS
+| Hard to manually audit. Prefer pinning known-good revisions; avoid running untrusted forks of these files.
+
+| GitHub-sourced npm deps
+| `pdfkit` and `websocket-rpc` are pulled via `github:manga-download/...` pins. Supply-chain trust sits with that org and those tags.
+
+| Weak secret storage
+| Settings secrets use Base64 (`btoa` / `atob`), not real encryption (`web/src/engine/SettingsManager.ts`). Local disk access can recover stored passwords.
+
+| `webSecurity: false`
+| Expected for the product, but widens renderer exposure if a site XSS succeeds inside the shell.
+
+| Dead telemetry stub
+| `WebtoonHatti.ts` contains a **commented-out** reporter to `report.hakuneko.workers.dev`. Not active, but shows prior telemetry design.
+|===
+
+=== Not found
+
+No evidence of classic malware patterns in first-party sources: reverse shells, keyloggers, crypto miners, Discord/Telegram webhook exfiltration, or install scripts that pull and run remote binaries outside Electron’s normal install.
+
+IMPORTANT: This is a best-effort static review of the repository sources, not a formal penetration test or full deobfuscation of every DRM blob. Re-run checks after dependency or DRM file updates.
+
+## License
+
+link:UNLICENSE[Unlicense] (public domain dedication).
