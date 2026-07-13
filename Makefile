@@ -4,7 +4,7 @@
 
 run:
 	@test -f app/electron/build/main.js -a -f app/electron/build/index.html || $(MAKE) build
-	npm exec -- electron ./app/electron/build
+	npm exec -- electron ./app/electron/build --user-data-dir="$(CURDIR)/app/electron/userdata"
 
 build:
 	npm run build --workspace=app/electron

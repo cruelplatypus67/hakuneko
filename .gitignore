@@ -7,6 +7,7 @@ bundle
 deploy
 dist
 node_modules
+app/electron/userdata
 package-lock.json
 junit.xml
 web/vite.config.ts.timestamp*

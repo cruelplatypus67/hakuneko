@@ -27,6 +27,9 @@ export const enum Key {
 
 export async function Initialize(settingsManager: SettingsManager, frontends: IFrontendInfo[]): Promise<void> {
     const settings = settingsManager.OpenScope(Scope);
+    const mediaDirectory = globalThis.ipcRenderer
+        ? await navigator.storage.getDirectory().then(root => root.getDirectoryHandle('downloads', { create: true })).catch(() => null)
+        : null;
     await settings.Initialize(
         new Choice(
             Key.Frontend,
@@ -50,7 +53,7 @@ export async function Initialize(settingsManager: SettingsManager, frontends: IF
             Key.MediaDirectory,
             R.Settings_Global_MediaDirectory,
             R.Settings_Global_MediaDirectoryInfo,
-            null
+            mediaDirectory
         ),
         new Check(
             Key.UseWebsiteSubDirectory,
