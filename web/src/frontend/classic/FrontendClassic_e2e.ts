@@ -31,6 +31,19 @@ describe.sequential('Front-End (Classic)', { timeout: 60_000 }, () => {
 
             await page.waitForFunction(() => !document.querySelector('main#hakunekoapp > div#Content'));
         });
+
+        it('Should persist the selected plugin and category', async () => {
+            const page = await fixture.GetPage();
+            await fixture.UpdateSetting('frontend.classic.plugin-select', 'plugin', 'allmanga');
+            await fixture.UpdateSetting('frontend.classic.plugin-select', 'plugin-category', 'Tags_Media_Manga');
+            await fixture.Delay(100);
+
+            await page.reload();
+            await page.waitForSelector('#Plugin input#PluginSelect');
+
+            expect(await fixture.GetWebsiteFilter()).toBe('AllManga');
+            expect(await page.$eval('#PluginCategory select', (select: HTMLSelectElement) => select.value)).toBe('Tags_Media_Manga');
+        });
     });
 
     describe('Bookmarks', async () => {

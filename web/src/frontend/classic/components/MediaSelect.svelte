@@ -101,6 +101,7 @@
         loadPlugin = Promise.resolve(UI.selectedPlugin);
         currentPlugin = UI.selectedPlugin;
         pluginDropdownSelected = currentPlugin?.Identifier;
+        Settings.Plugin.Value = currentPlugin?.Identifier ?? HakuNeko.BookmarkPlugin.Identifier;
         if (!disablePluginRefresh && !currentPlugin?.IsSameAs(previousPlugin))
             loadMedias(UI.selectedPlugin);
         disablePluginRefresh = false;

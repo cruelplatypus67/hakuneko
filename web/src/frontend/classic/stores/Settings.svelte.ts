@@ -1,5 +1,5 @@
 import {type LocaleID, FrontendResourceKey as R } from '../../../i18n/ILocale';
-import { Check, Choice, Numeric } from '../../../engine/SettingsManager';
+import { Check, Choice, Numeric, Text } from '../../../engine/SettingsManager';
 import { LoadSettingStore, SettingCountStore, SettingStore } from './storesHelpers.svelte';
 import { Key as GlobalKey, Scope as GlobalScope } from '../../../engine/SettingsGlobal';
 import { GetLocale } from '../../../i18n/Localization';
@@ -20,6 +20,7 @@ export const enum Key {
     SidenavIconsOnTop = 'sidenav-icons-on-top',
     //
     FuzzySearch ='fuzzy-search',
+    Plugin = 'plugin',
     PluginCategory = 'plugin-category',
     //
     ViewerMode = 'viewer-mode',
@@ -51,7 +52,10 @@ export async function Initialize(): Promise<void> {
         Settings.FuzzySearch.Setting,
     );
 
-    await frontendClassicSettingsPluginSelect.Initialize(Settings.PluginCategory.Setting);
+    await frontendClassicSettingsPluginSelect.Initialize(
+        Settings.Plugin.Setting,
+        Settings.PluginCategory.Setting,
+    );
 
     await frontendClassicSettingsViewer.Initialize(
         Settings.ViewerMode.Setting,
@@ -100,6 +104,13 @@ class UIClassicStore {
         R.Frontend_Classic_Settings_FuzzySearch,
         R.Frontend_Classic_Settings_FuzzySearchInfo,
         false
+    ));
+
+    Plugin = new SettingStore<string, Text>(new Text(
+        Key.Plugin,
+        R.Frontend_Plugins,
+        R.Frontend_Plugins,
+        HakuNeko.BookmarkPlugin.Identifier,
     ));
 
     PluginCategory = new SettingStore<string, Choice>(new Choice(
