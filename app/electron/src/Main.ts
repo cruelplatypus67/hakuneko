@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { app } from 'electron';
+import { pathToFileURL } from 'node:url';
+import { app, shell } from 'electron';
 import { Command } from 'commander';
 import { IPC } from './ipc/InterProcessCommunication';
 import { ApplicationWindow } from './ipc/ApplicationWindow';
@@ -11,15 +12,14 @@ import { RemoteBrowserWindowController } from './ipc/RemoteBrowserWindow';
 import { RPCServer } from '../../src/rpc/Server';
 import { RemoteProcedureCallManager } from './ipc/RemoteProcedureCallManager';
 import { RemoteProcedureCallContract } from './ipc/RemoteProcedureCallContract';
-process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 type CLIOptions = {
     origin?: string;
 }
 
-app.commandLine.appendSwitch('allow-running-insecure-content');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.enableSandbox();
 
 function ParseCLI(): CLIOptions {
     try {
@@ -64,7 +64,7 @@ async function CreateApplicationWindow(): Promise<ApplicationWindow> {
         transparent: true,
         //icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
         webPreferences: {
-            sandbox: false,
+            sandbox: true,
             webSecurity: false, // Bypass CORS checks
             contextIsolation: true,
             nodeIntegration: false,
@@ -81,19 +81,51 @@ async function CreateApplicationWindow(): Promise<ApplicationWindow> {
     return win;
 }
 
-function CheckHostPermission(url: string, appURI: URL) {
+function CheckOrigin(url: string, appURI: URL) {
     try {
-        return new URL(url).hostname === appURI.hostname;
+        return new URL(url).origin === appURI.origin;
     } catch {
         return false;
     }
 }
 
-function UpdatePermissions(session: Electron.Session, appURI: URL) {
-    session.setPermissionCheckHandler((webContents, permission, requestingOrigin) => CheckHostPermission(requestingOrigin, appURI));
-    session.setPermissionRequestHandler((webContents, permission, callback, details) => callback(CheckHostPermission(details.requestingUrl, appURI)));
+function CheckTrustedURL(url: string, appURI: URL): boolean {
+    try {
+        const candidate = new URL(url);
+        return appURI.protocol === 'file:' ? candidate.href === appURI.href : candidate.origin === appURI.origin;
+    } catch {
+        return false;
+    }
+}
+
+function UpdatePermissions(session: Electron.Session, webContents: Electron.WebContents, appURI: URL) {
+    const allowed = new Set([ 'clipboard-read', 'fileSystem' ]);
+    session.setPermissionCheckHandler((requester, permission, requestingOrigin, details) => allowed.has(permission) && requester === webContents && details.isMainFrame && (appURI.protocol === 'file:' || CheckOrigin(requestingOrigin, appURI)));
+    session.setPermissionRequestHandler((requester, permission, callback, details) => callback(allowed.has(permission) && requester === webContents && details.isMainFrame && CheckTrustedURL(details.requestingUrl, appURI)));
     // TODO: May remove the following workaround when https://github.com/electron/electron/issues/41957 is solved
-    session.on('file-system-access-restricted', (event, details, callback) => callback(CheckHostPermission(details.origin, appURI) ? 'allow' : 'deny'));
+    session.on('file-system-access-restricted', (_event, details, callback) => callback(CheckOrigin(details.origin, appURI) ? 'allow' : 'deny'));
+}
+
+function RestrictNavigation(webContents: Electron.WebContents, appURI: URL): void {
+    const preventUntrustedNavigation = (event: Electron.Event, url: string) => {
+        if(!CheckTrustedURL(url, appURI)) event.preventDefault();
+    };
+    webContents.on('will-navigate', preventUntrustedNavigation);
+    webContents.on('will-redirect', preventUntrustedNavigation);
+    webContents.setWindowOpenHandler(({ url }) => {
+        try {
+            if(/^https?:$/i.test(new URL(url).protocol)) void shell.openExternal(url);
+        } catch { /* DENY */ }
+        return { action: 'deny' };
+    });
+}
+
+function ResolveAppURI(value: string): URL {
+    try {
+        return new URL(value);
+    } catch {
+        return pathToFileURL(path.resolve(app.getAppPath(), value));
+    }
 }
 
 async function OpenWindow(): Promise<void> {
@@ -101,14 +133,15 @@ async function OpenWindow(): Promise<void> {
         InitializeMenu();
         const argv = ParseCLI();
         const manifest = await LoadManifest();
+        const uri = ResolveAppURI(argv.origin ?? manifest.url ?? 'about:blank');
         await SetupUserDataDirectory(manifest);
         app.userAgentFallback = manifest['user-agent'] ?? app.userAgentFallback.split(/\s+/).filter(segment => !/(hakuneko|electron)/i.test(segment)).join(' ');
         await app.whenReady();
         const win = await CreateApplicationWindow();
-        const ipc = new IPC(win.webContents);
+        RestrictNavigation(win.webContents, uri);
+        const ipc = new IPC(win.webContents, uri);
         const rpc = new RPCServer('/hakuneko', new RemoteProcedureCallContract(ipc, win.webContents));
-        const uri = new URL(argv.origin ?? manifest.url ?? 'about:blank');
-        UpdatePermissions(win.webContents.session, uri);
+        UpdatePermissions(win.webContents.session, win.webContents, uri);
         new RemoteProcedureCallManager(rpc, ipc);
         new FetchProvider(ipc, win.webContents);
         new RemoteBrowserWindowController(ipc);

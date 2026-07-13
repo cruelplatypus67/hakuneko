@@ -17,11 +17,6 @@ export interface IRemoteBrowserWindow {
      * Evaluate the given {@link script} and return the result from the last instruction.
      */
     ExecuteScript<T extends void | JSONElement>(script: string): Promise<T>;
-    /**
-     * Send chrome debug protocol commands.
-     * @see https://chromedevtools.github.io/devtools-protocol/1-3/
-     */
-    SendDebugCommand<T extends void | JSONElement>(method: string, parameters?: JSONObject): Promise<T>;
 }
 
 export function CreateRemoteBrowserWindow(): IRemoteBrowserWindow {

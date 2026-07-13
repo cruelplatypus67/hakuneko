@@ -1,4 +1,4 @@
-import type { BrowserWindowConstructorOptions, LoadURLOptions } from 'electron';
+import type { LoadURLOptions } from 'electron';
 import { Observable, type IObservable } from '../../Observable';
 import type { IRemoteBrowserWindow } from '../RemoteBrowserWindow';
 import type { IPC } from '../InterProcessCommunication';
@@ -46,28 +46,7 @@ export default class RemoteBrowserWindow implements IRemoteBrowserWindow {
 
     public async Open(request: Request, show: boolean = false, preload: string = '') {
 
-        const openOptions: BrowserWindowConstructorOptions = {
-            show: show,
-            width: 1280,
-            height: 800,
-            center: true,
-            webPreferences: {
-                sandbox: true,
-                webSecurity: true,
-                contextIsolation: false, // Disabled for sharing `window` instance in pre-load script: https://www.electronjs.org/docs/latest/tutorial/context-isolation#what-is-it
-                nodeIntegration: false,
-                nodeIntegrationInWorker: false,
-                nodeIntegrationInSubFrames: true, // Enabled to execute pre-load script in all sub-frames: https://github.com/electron/electron/issues/22582
-                backgroundThrottling: false, // Disabled to force timers, observers and animation frames to work in non-visible window: https://www.electronjs.org/docs/latest/api/browser-window#page-visibility
-                disableBlinkFeatures: 'AutomationControlled',
-            }
-        };
-
-        if (preload) {
-            openOptions.webPreferences.preload = preload;
-        }
-
-        this.windowID = await this.ipc.Send<number>(Channels.App.OpenWindow, JSON.stringify(openOptions));
+        this.windowID = await this.ipc.Send<number>(Channels.App.OpenWindow, show, preload);
 
         /*
         if(isNaN(this.windowID)) {
@@ -106,7 +85,4 @@ export default class RemoteBrowserWindow implements IRemoteBrowserWindow {
         return this.ipc.Send<T>(Channels.App.ExecuteScript, this.windowID, script);
     }
 
-    public async SendDebugCommand<T extends void | JSONElement>(method: string, parameters?: JSONObject): Promise<T> {
-        return this.ipc.Send<T>(Channels.App.SendDebugCommand, this.windowID, method, parameters);
-    }
 }

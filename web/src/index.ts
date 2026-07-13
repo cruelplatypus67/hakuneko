@@ -16,6 +16,7 @@ declare global {
 }
 
 window.addEventListener('load', async () => {
+    if(!('serviceWorker' in navigator) || !/^https?:$/.test(window.location.protocol)) return;
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.allSettled(registrations.map(registration => registration.unregister()));
     const urlServiceWorker = new URL(import.meta.env.DEV ? './service-worker.ts' : '/sw.js', import.meta.url);
@@ -48,7 +49,7 @@ function ShowErrorNotice(root: HTMLElement, error?: Error) {
 
 (async function() {
     try {
-        const appWindow = CreateAppWindow(window.location.origin + splashPath);
+        const appWindow = CreateAppWindow(new URL(splashPath.slice(1), window.location.href).href);
         if(FeatureFlags.ShowSplashScreen) {
             appWindow.ShowSplash();
         } else {
@@ -61,7 +62,7 @@ function ShowErrorNotice(root: HTMLElement, error?: Error) {
 
         window.HakuNeko = new HakuNeko();
         await window.HakuNeko.Initialze(FrontendList);
-        if(window.HakuNeko.FeatureFlags.CrowdinTranslationMode.Value) {
+        if(window.HakuNeko.FeatureFlags.CrowdinTranslationMode.Value && !globalThis.nw && !globalThis.ipcRenderer) {
             document.head.querySelector<HTMLScriptElement>('#crowdin').src = 'https://cdn.crowdin.com/jipt/jipt.js';
         }
 

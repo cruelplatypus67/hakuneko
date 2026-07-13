@@ -1,18 +1,16 @@
-import os from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs/promises';
-import { BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
+import { BrowserWindow } from 'electron';
 import type { IPC, Callback } from './InterProcessCommunication';
 import { RemoteBrowserWindowController as Channels } from '../../../src/ipc/Channels';
 
 export class RemoteBrowserWindowController {
+
+    private readonly windows = new Map<number, BrowserWindow>();
 
     constructor (private readonly ipc: IPC<Channels.Web, Channels.App>) {
         this.ipc.Listen(Channels.App.OpenWindow, this.OpenWindow.bind(this) as Callback<number>);
         this.ipc.Listen(Channels.App.CloseWindow, this.CloseWindow.bind(this) as Callback);
         this.ipc.Listen(Channels.App.SetVisibility, this.SetVisibility.bind(this) as Callback);
         this.ipc.Listen(Channels.App.ExecuteScript, this.ExecuteScript.bind(this) as Callback);
-        this.ipc.Listen(Channels.App.SendDebugCommand, this.SendDebugCommand.bind(this) as Callback);
         this.ipc.Listen(Channels.App.LoadURL, this.LoadURL.bind(this) as Callback);
     }
 
@@ -21,30 +19,37 @@ export class RemoteBrowserWindowController {
     }
 
     private FindWindow(windowID: number): BrowserWindow {
-        return BrowserWindow.fromId(windowID) ?? this.Throw(`Failed to find window with id ${windowID}!`);
+        return this.windows.get(windowID) ?? this.Throw(`Failed to find controlled window with id ${windowID}!`);
     }
 
-    private async CreatePreloadScriptFile(content: string): Promise<string> {
-        const file = path.resolve(os.tmpdir(), Date.now().toString(36) + Math.random().toString(36));
-        await fs.writeFile(file, content);
-        return file;
-    }
-
-    private async OpenWindow(options: string): Promise<number> {
-        const windowOptions: BrowserWindowConstructorOptions = JSON.parse(options);
-        if (windowOptions.webPreferences?.preload) {
-            windowOptions.webPreferences.preload = await this.CreatePreloadScriptFile(windowOptions.webPreferences.preload);
-        } else {
-            delete windowOptions.webPreferences?.preload;
-        }
-        const win = new BrowserWindow(windowOptions);
+    private async OpenWindow(show: boolean, preload: string): Promise<number> {
+        const win = new BrowserWindow({
+            show,
+            width: 1280,
+            height: 800,
+            center: true,
+            webPreferences: {
+                sandbox: true,
+                webSecurity: true,
+                contextIsolation: true,
+                nodeIntegration: false,
+                nodeIntegrationInWorker: false,
+                nodeIntegrationInSubFrames: false,
+                backgroundThrottling: false,
+                disableBlinkFeatures: 'AutomationControlled',
+            },
+        });
         win.autoHideMenuBar = true;
         win.setMenuBarVisibility(false);
         win.webContents.debugger.attach('1.3');
+        if(preload) {
+            await win.webContents.debugger.sendCommand('Page.addScriptToEvaluateOnNewDocument', { source: preload });
+        }
         win.webContents.setWindowOpenHandler(() => { return { action: 'deny' }; });
         win.webContents.on('dom-ready', () => this.ipc.Send(Channels.Web.OnDomReady, win.id));
         win.webContents.on('did-start-navigation', event => this.ipc.Send(Channels.Web.OnBeforeNavigate, win.id, event.url, event.isMainFrame, event.isSameDocument));
-        win.once('closed', () => windowOptions.webPreferences?.preload && fs.rm(windowOptions.webPreferences?.preload).catch(err => console.warn(err)));
+        win.once('closed', () => this.windows.delete(win.id));
+        this.windows.set(win.id, win);
         return win.id;
     }
 
@@ -63,16 +68,9 @@ export class RemoteBrowserWindowController {
         return this.FindWindow(windowID).webContents.executeJavaScript(script, true);
     }
 
-    private async SendDebugCommand<T extends void | JSONElement>(windowID: number, method: string, parameters?: JSONObject): Promise<T> {
-        const remoteDebugger = this.FindWindow(windowID).webContents.debugger;
-        if(remoteDebugger.isAttached()) {
-            return remoteDebugger.sendCommand(method, parameters) as Promise<T>;
-        } else {
-            this.Throw(`The debugger is not attached to the window with id ${windowID}!`);
-        }
-    }
-
     private async LoadURL(windowID: number, url: string, options: string): Promise<void> {
+        const protocol = new URL(url).protocol;
+        if(!/^https?:$/i.test(protocol)) this.Throw(`Unsupported browser window URL protocol '${protocol}'!`);
         await this.FindWindow(windowID).loadURL(url, JSON.parse(options));
     }
 }

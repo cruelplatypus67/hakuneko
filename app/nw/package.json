@@ -4,7 +4,7 @@
     "description": "Manga, Anime & Novel Downloader (NodeWebkit based desktop client)",
     "type": "module",
     "main": "app.js",
-    "url": "https://app.hakuneko.download",
+    "url": "index.html",
     "engines": {
         "node": ">=22.13.0",
         "npm": ">=10.9.2"
@@ -21,7 +21,7 @@
     "scripts": {
         "check:ts": "tsc --noEmit --pretty",
         "check": "npm run check:ts && eslint",
-        "build": "node ./scripts/build-app.mjs && vite build",
+        "build": "npm --prefix ../../web run build -- --base=./ && node ./scripts/build-app.mjs && vite build",
         "bundle": "npm run build && node ./scripts/deploy-app.mjs",
         "test": "vitest run",
         "launch:dev": "npm run build && nw ./build --origin=https://localhost:3000 --ignore-certificate-errors",

@@ -5,7 +5,6 @@ import { SetTimeout } from '../../BackgroundTimers';
 export default class RemoteBrowserWindow implements IRemoteBrowserWindow {
 
     private nwWindow: NWJS_Helpers.win = undefined;
-    private nwDebugTarget: { tabId?: number } = undefined;
 
     private readonly domReady = new Observable<void, RemoteBrowserWindow>(null, this);
     public get DOMReady(): IObservable<void, RemoteBrowserWindow> {
@@ -108,9 +107,6 @@ export default class RemoteBrowserWindow implements IRemoteBrowserWindow {
     }
 
     public async Close(): Promise<void> {
-        if(this.nwDebugTarget) {
-            await chrome.debugger.detach(this.nwDebugTarget);
-        }
         this.nwWindow?.removeAllListeners();
         this.nwWindow?.close();
     }
@@ -133,22 +129,4 @@ export default class RemoteBrowserWindow implements IRemoteBrowserWindow {
         }
     }
 
-    public async SendDebugCommand<T extends void | JSONElement>(method: string, parameters?: JSONObject): Promise<T> {
-        if(!this.nwDebugTarget) {
-            this.nwDebugTarget = await new Promise((resolve, reject) => {
-                chrome.debugger.getTargets(async targets => {
-                    try {
-                        const target = { tabId: targets.find(target => target.type === 'page' && target.url === this.nwWindow.window.location.href).tabId };
-                        await chrome.debugger.attach(target, '1.3');
-                        resolve(target);
-                    } catch(error) {
-                        reject(error);
-                    }
-                });
-            });
-        }
-        return new Promise<T>(async resolve => {
-            chrome.debugger.sendCommand(this.nwDebugTarget, method, parameters, result => resolve(result as T));
-        });
-    }
 }

@@ -12,23 +12,15 @@ try {
 } catch { /* IGNORE */ }
 
 await purge(dirBuild);
+await fs.cp(path.resolve('../../web/build'), dirBuild, { recursive: true });
 
 const manifest = {
     name: pkgConfig.name,
     //type: pkgConfig.type, // 'commonjs',
     main: pkgConfig.main,
     //'node-main': pkgConfig.main,
-    url: pkgConfig.url,
-    'node-remote': [
-        'http://localhost/*',
-        'https://localhost/*',
-        'https://app.hakuneko.ovh/*',
-        'https://app.hakuneko.download/*',
-        'https://*.hakuneko.workers.dev/*',
-        `${new URL(pkgConfig.url).origin}/*`,
-    ],
+    url: 'index.html',
     'chromium-args': [
-        '--allow-running-insecure-content',
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
     ].join(' '),

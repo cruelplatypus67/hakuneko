@@ -53,7 +53,7 @@ export namespace RemoteBrowserWindowController {
 
     /** Send from the Render process and received in the Main process. */
     export enum App {
-        /** Channel for IPC callback with signature: `(options: string) => Promise<number>` */
+        /** Channel for IPC callback with signature: `(show: boolean, preload: string) => Promise<number>` */
         OpenWindow = 'RemoteBrowserWindowController::OpenWindow',
         /** Channel for IPC callback with signature: `(windowID: number) => Promise<void>` */
         CloseWindow = 'RemoteBrowserWindowController::CloseWindow',
@@ -61,8 +61,6 @@ export namespace RemoteBrowserWindowController {
         SetVisibility = 'RemoteBrowserWindowController::SetVisibility',
         /** Channel for IPC callback with signature: `<T extends JSONElement>(windowID: number, script: string) => Promise<T>` */
         ExecuteScript = 'RemoteBrowserWindowController::ExecuteScript',
-        /** Channel for IPC callback with signature: `<T extends void | JSONElement>(windowID: number, method: string, parameters?: JSONObject) => Promise<T>` */
-        SendDebugCommand = 'RemoteBrowserWindowController::SendDebugCommand',
         /** Channel for IPC callback with signature: `(windowID: number, url: string, options: string) => Promise<void>` */
         LoadURL = 'RemoteBrowserWindowController::LoadURL',
     };
