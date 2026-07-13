@@ -122,10 +122,7 @@ export class DownloadManagerTask extends FASTElement {
     public ShowErrors() {
         if (this.Entry.Errors.Value.length > 0) {
             // TODO: Show all errors in a fancy error dialog ...
-            const message = this.Entry.Errors.Value.map(error => {
-                return `<div>${error.message}</div><pre>${error.stack}</pre>`;
-            }).join('<hr>');
-            window.open(null, '_blank', [
+            const popup = window.open(null, '_blank', [
                 'titlebar=no',
                 'menubar=no',
                 'toolbar=no',
@@ -135,7 +132,16 @@ export class DownloadManagerTask extends FASTElement {
                 'resizable=yes',
                 'width=800',
                 'height=480'
-            ].join(', ')).document.write(message);
+            ].join(', '));
+            if(!popup) return;
+            const content = this.Entry.Errors.Value.flatMap(error => {
+                const message = popup.document.createElement('div');
+                message.textContent = error.message;
+                const stack = popup.document.createElement('pre');
+                stack.textContent = error.stack;
+                return [ message, stack, popup.document.createElement('hr') ];
+            });
+            popup.document.body.replaceChildren(...content.slice(0, -1));
         }
     }
 }

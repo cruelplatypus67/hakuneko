@@ -36,7 +36,7 @@
     on:close
     on:submit
 >
-    <p>{@html alertMessage}</p>
+    <p>{alertMessage}</p>
 </Modal>
 
 <Modal
@@ -48,5 +48,5 @@
     on:close
     on:submit
 >
-    <p>{@html infoMessage}</p>
+    <p>{infoMessage}</p>
 </Modal>

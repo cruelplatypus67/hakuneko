@@ -27,13 +27,13 @@
         <BreadcrumbItem isCurrentPage>{selectedDocSection?.name}</BreadcrumbItem
         >
     </Breadcrumb>
-    <div class="article">{@html selectedDocSection?.content.outerHTML}</div>
+    <div class="article">{selectedDocSection?.content}</div>
 {:else}
     {#each $documentation as docCategory}
         <div class="category">
             <h3 class="name">{docCategory.name}</h3>
             <div class="content">
-                {@html docCategory.description.outerHTML}
+                {docCategory.description}
                 <div class="section">
                     {#each docCategory.sections as docSection}
                         <ClickableTile

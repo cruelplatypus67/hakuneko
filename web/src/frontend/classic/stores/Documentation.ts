@@ -2,12 +2,12 @@ import { readable } from 'svelte/store';
 
 export type DocCategory = {
     name: string;
-    description: HTMLElement;
+    description: string;
     sections: DocSection[];
 }
 export type DocSection = {
     name: string,
-    content: HTMLElement
+    content: string
 }
 
 export const documentation = readable<DocCategory[]>([], (set) => {
@@ -38,15 +38,6 @@ export const documentation = readable<DocCategory[]>([], (set) => {
         const main = html.querySelector('section');
         const categories: DocCategory[] = [];
         if (main) {
-            const images = main.querySelectorAll('img');
-            images.forEach((image) => {
-                const src = image.getAttribute('src');
-                if (src && !src.startsWith('http')) {
-                    const urlObj = new URL(url);
-                    const baseUrl = urlObj.protocol + '//' + urlObj.host;
-                    image.setAttribute('src', baseUrl + src);
-                }
-            });
             // TODO replace DOM parsing with markdown analysis (would require a markdown parser)
             const h2Elements = main.querySelectorAll('h2');
             h2Elements.forEach((h2) => {
@@ -55,9 +46,9 @@ export const documentation = readable<DocCategory[]>([], (set) => {
                 const categorySlide = slideElement(h2, ['H2']);
                 categorySlide.querySelectorAll('h3').forEach((h3) => {
                     const sectionSlide = slideElement(h3, ['H3']);
-                    sections.push({ name: h3.textContent || '', content: sectionSlide });
+                    sections.push({ name: h3.textContent || '', content: sectionSlide.textContent || '' });
                 });
-                categories.push({ name: h2.textContent || '', description: categoryDescription, sections: sections });
+                categories.push({ name: h2.textContent || '', description: categoryDescription.textContent || '', sections: sections });
             });
         }
         set(categories);

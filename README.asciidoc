@@ -122,14 +122,14 @@ A source review was performed on this tree for hidden malware-style behavior (in
 
 === What looks intentional / expected for this app
 
-* **Scraping desktop shell** — Electron sets `webSecurity: false` to bypass CORS for site fetches. `nodeIntegration` is **off** and `contextIsolation` is **on** in the main window config (`app/electron/src/Main.ts`).
-* **Remote web app origins** — Client manifests allow `node-remote` for `app.hakuneko.download`, `*.hakuneko.workers.dev`, and localhost. The default packaged client loads the hosted app URL, not only local files.
+* **Scraping desktop shell** — Electron sets `webSecurity: false` to bypass CORS for site fetches. The main renderer is sandboxed with Node integration off, context isolation on, an allowlisted IPC bridge, exact sender checks, and restricted navigation/permissions (`app/electron/src/Main.ts`).
+* **Web app origins** — Electron and NW.js package the locally built web UI. NW.js no longer grants Node access to remote origins. Electron accepts an explicit `--origin` override for local development only.
 * **Obfuscated modules** (high scrutiny, domain-specific purpose):
   ** `web/src/engine/platform/AntiScrapingDetection.js` — bot / challenge detection helpers
   ** `web/src/engine/websites/*.DRM.js` — site-specific image/DRM descramblers (e.g. Bilibili, Comikey, MangaGo)
   These are heavily obfuscated (string encoding + control-flow packing). Readable exports match downloader use (e.g. `DRMProvider`, fetch redirection enums), not a general reverse shell. Treat them as **opaque third-party-style blobs**: re-audit on every update.
 * **Ad / tracker blocking** — `BloatGuard` blocks many ad and analytics hosts (including Google Analytics and Sentry), which reduces drive-by noise from manga sites.
-* **Local RPC** — Optional websocket RPC (`app/src/rpc/Server.ts`) is gated by origin allowlist + SHA-256 token of a user secret. Weak secrets would allow local automation tools to control the instance.
+* **Local RPC** — Optional websocket RPC (`app/src/rpc/Server.ts`) binds only to loopback and is gated by an origin allowlist plus a SHA-256 token derived from a randomly generated user secret.
 * **`postinstall`** — Only runs Electron once to print its version (`--no-sandbox --version`). No download-and-execute of unrelated payloads observed.
 
 === Risks and weaknesses (not “hidden malware”, but real)
@@ -139,7 +139,7 @@ A source review was performed on this tree for hidden malware-style behavior (in
 | Risk | Detail
 
 | Trust of hosted app
-| Production clients talk to `https://app.hakuneko.download` and related `hakuneko.*` hosts. Compromise of those assets is high impact.
+| Packaged desktop clients use a local UI, reducing this risk. The hosted web deployment remains in scope for normal browser data and session compromise, and explicit desktop `--origin` development overrides should only point to trusted servers.
 
 | Obfuscated DRM / anti-bot JS
 | Hard to manually audit. Prefer pinning known-good revisions; avoid running untrusted forks of these files.
