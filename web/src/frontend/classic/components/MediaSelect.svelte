@@ -224,6 +224,14 @@
             onclick={onMediaPasteURL}
         />
     </div>
+    <div id="PluginCategory">
+        <Select labelText={GlobalSettings.Locale[Tags.Media.Title]()} hideLabel size="sm" bind:selected={Settings.PluginCategory.Value}>
+            <SelectItem value="" text={GlobalSettings.Locale[R.Frontend_Plugin_CategoryAll]()} />
+            {#each pluginCategories as category}
+                <SelectItem value={category.Title} text={GlobalSettings.Locale[category.Title]()} />
+            {/each}
+        </Select>
+    </div>
     <div id="Plugin">
         <ComboBox
             id="PluginSelect"
@@ -258,15 +266,6 @@
             style="float: right;"
             onclick={onUpdateMediaEntriesClick}
         />
-    </div>
-
-    <div id="PluginCategory">
-        <Select labelText={GlobalSettings.Locale[Tags.Media.Title]()} hideLabel size="sm" bind:selected={Settings.PluginCategory.Value}>
-            <SelectItem value="" text={GlobalSettings.Locale[R.Frontend_Plugin_CategoryAll]()} />
-            {#each pluginCategories as category}
-                <SelectItem value={category.Title} text={GlobalSettings.Locale[category.Title]()} />
-            {/each}
-        </Select>
     </div>
 
     <div id="MediaFilter">
@@ -319,13 +318,13 @@
         gap: 0.3em 0.3em;
         grid-template-areas:
             'MediaTitle Empty'
-            'Plugin Resize'
             'PluginCategory Resize'
+            'Plugin Resize'
             'MediaFilter Resize'
             'MediaList Resize'
             'MediaCount Resize';
         grid-area: Media;
-        min-width: 22em;
+        min-width: 350px;
     }
     #Plugin {
         grid-area: Plugin;

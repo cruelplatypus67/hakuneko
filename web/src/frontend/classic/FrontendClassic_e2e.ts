@@ -15,9 +15,27 @@ describe.sequential('Front-End (Classic)', { timeout: 60_000 }, () => {
                 'div#app > nav.bx--side-nav__navigation',
                 'div#app > main#hakunekoapp > div#Media > div#MediaList',
                 'div#app > main#hakunekoapp > div#Item > div#ItemList',
-                'div#app > main#hakunekoapp > div#Content > main > div#Home',
                 'div#app > main#hakunekoapp > div#Bottom div.downloads',
             );
+        });
+
+        it('Should keep the content panel hidden until Home is clicked', async () => {
+            const page = await fixture.GetPage();
+            expect(await page.$('main#hakunekoapp > div#Content')).toBeNull();
+
+            await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll<HTMLElement>('a.bx--side-nav__link'));
+                links.find(link => link.textContent.trim() === 'Home')?.click();
+            });
+
+            await page.waitForSelector('main#hakunekoapp > div#Content main > div#Home');
+
+            await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll<HTMLElement>('a.bx--side-nav__link'));
+                links.find(link => link.textContent.trim() === 'Home')?.click();
+            });
+
+            await page.waitForFunction(() => !document.querySelector('main#hakunekoapp > div#Content'));
         });
     });
 

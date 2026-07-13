@@ -33,7 +33,8 @@
         setTimeout(resolveFinishLoading, 2500);
     });
 
-    let showHome = true;
+    let showHome = $state(false);
+    let showContent = $derived(Settings.ContentPanel.Value && (showHome || Boolean(UI.selectedItem)));
 </script>
 
 <UserMessage />
@@ -42,6 +43,7 @@
 <Theme theme={Settings.Theme.Value}>
     <AppBar
         onHome={() => {
+            showHome = !(showHome && !UI.selectedItem);
             UI.selectedItem = null;
             UI.contentscreen = '/';
         }}
@@ -49,11 +51,11 @@
 
     <Content
         id="hakunekoapp"
-        class={Settings.ContentPanel.Value ? 'ui-mode-content' : 'ui-mode-download'}
+        class={showContent ? 'ui-mode-content' : 'ui-mode-download'}
     >
         <MediaSelect />
         <MediaItemSelect />
-        {#if Settings.ContentPanel.Value}
+        {#if showContent}
             <div id="Content" transition:fade>
                 {#if UI.selectedItem}
                     <Viewer item={UI.selectedItem} />

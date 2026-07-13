@@ -12,6 +12,7 @@
     } from 'carbon-components-svelte';
     import ChevronSort from 'carbon-icons-svelte/lib/ChevronSort.svelte';
     import EarthFilled from 'carbon-icons-svelte/lib/EarthFilled.svelte';
+    import UpdateNow from 'carbon-icons-svelte/lib/UpdateNow.svelte';
 
     import { fade } from 'svelte/transition';
 
@@ -51,6 +52,10 @@
             items = media?.Entries.Value as MediaContainer<MediaItem>[];
         }
         return media;
+    }
+
+    function retryMedia() {
+        loadItem = updateMedia(UI.selectedMedia);
     }
 
     $effect(() => {
@@ -308,6 +313,16 @@
 <div id="Item" transition:fade>
     <div id="ItemTitle">
         <h5>Item List</h5>
+        <Button
+            icon={UpdateNow}
+            size="small"
+            kind="ghost"
+            tooltipPosition="bottom"
+            tooltipAlignment="end"
+            iconDescription="Retry item list"
+            disabled={!UI.selectedMedia}
+            onclick={retryMedia}
+        />
     </div>
     <div id="LanguageFilter">
         <Button
@@ -352,8 +367,8 @@
             <div class="error">
                 <InlineNotification
                     lowContrast
-                    title={error.name}
-                    subtitle={error.message}
+                    title={error instanceof TypeError ? 'Could not reach source' : error.name}
+                    subtitle={error instanceof TypeError ? 'The source did not respond. Retry the item list.' : error.message}
                 />
             </div>
         {/await}
@@ -392,7 +407,7 @@
             'ItemList Resize'
             'ItemBottom Resize';
         grid-area: Item;
-        min-width: 22em;
+        min-width: 350px;
     }
     #LanguageFilter {
         grid-area: LanguageFilter;
@@ -412,6 +427,9 @@
         height: 100%;
     }
     #ItemTitle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         padding-top: 0.3em;
     }
     #ItemBottom {
