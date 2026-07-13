@@ -13,10 +13,12 @@ vi.mock('electron', () => ({
 
 describe('Preload IPC bridge', () => {
     let bridge: { invoke(channel: string, ...parameters: JSONArray): Promise<JSONElement>; on(channel: string, callback: (...parameters: JSONArray) => void): void };
+    let portableStorage: { writeFile(segments: string[], data: ArrayBuffer): Promise<void> };
 
     beforeAll(async () => {
         await import('./Preload');
         bridge = mocks.exposeInMainWorld.mock.calls[0]![1] as typeof bridge;
+        portableStorage = mocks.exposeInMainWorld.mock.calls[1]![1] as typeof portableStorage;
     });
 
     it('Should reject unknown IPC channels', () => {
@@ -33,5 +35,11 @@ describe('Preload IPC bridge', () => {
         listener({ sender: '😈' }, 7);
 
         expect(callback).toHaveBeenCalledWith(7);
+    });
+
+    it('Should expose portable file writes', async () => {
+        const data = new ArrayBuffer(1);
+        await portableStorage.writeFile(['Manga', 'Chapter', '001.webp'], data);
+        expect(mocks.invoke).toHaveBeenCalledWith('PortableStorage::WriteFile', ['Manga', 'Chapter', '001.webp'], data);
     });
 });

@@ -12,9 +12,11 @@ import { RemoteBrowserWindowController } from './ipc/RemoteBrowserWindow';
 import { RPCServer } from '../../src/rpc/Server';
 import { RemoteProcedureCallManager } from './ipc/RemoteProcedureCallManager';
 import { RemoteProcedureCallContract } from './ipc/RemoteProcedureCallContract';
+import { PortableStorage } from './ipc/PortableStorage';
 
 type CLIOptions = {
     origin?: string;
+    portableRoot?: string;
 }
 
 app.commandLine.appendSwitch('disable-background-timer-throttling');
@@ -27,6 +29,7 @@ function ParseCLI(): CLIOptions {
             .allowUnknownOption(true)
             .allowExcessArguments(true)
             .option('--origin [url]', 'custom location from which the web-app shall be loaded')
+            .option('--portable-root [path]', 'directory for portable downloads')
             .parse(process.argv, { from: 'electron' });
         return argv.opts<CLIOptions>();
     } catch {
@@ -148,6 +151,7 @@ async function OpenWindow(): Promise<void> {
         new FetchProvider(ipc, win.webContents);
         new RemoteBrowserWindowController(ipc);
         new BloatGuard(ipc, win.webContents);
+        new PortableStorage(ipc, argv.portableRoot ?? path.dirname(app.getPath('exe')));
         win.RegisterChannels(ipc);
         await win.loadURL(uri.href).catch(error => console.warn(error));
     } catch(error) {

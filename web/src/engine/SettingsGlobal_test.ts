@@ -36,24 +36,16 @@ describe('Global RPC settings', () => {
 });
 
 describe('Global media directory', () => {
-    it('Should use app-owned storage for new Electron profiles', async () => {
-        const downloads = { name: 'downloads' } as FileSystemDirectoryHandle;
-        const getDirectoryHandle = vi.fn().mockResolvedValue(downloads);
-        vi.stubGlobal('ipcRenderer', {});
-        vi.stubGlobal('navigator', {
-            storage: {
-                getDirectory: vi.fn().mockResolvedValue({ getDirectoryHandle }),
-            },
-        });
+    it('Should use portable storage for Electron profiles', async () => {
+        vi.stubGlobal('portableStorage', { writeFile: vi.fn() });
         const storage = {
-            LoadPersistent: vi.fn().mockResolvedValue(undefined),
+            LoadPersistent: vi.fn().mockResolvedValue({ [Key.MediaDirectory]: { name: 'old-downloads' } }),
             SavePersistent: vi.fn(),
         } as unknown as StorageController;
         const manager = new SettingsManager(storage);
 
         await Initialize(manager, []);
 
-        expect(manager.OpenScope().Get<Directory>(Key.MediaDirectory).Value).toBe(downloads);
-        expect(getDirectoryHandle).toHaveBeenCalledWith('downloads', { create: true });
+        expect(manager.OpenScope().Get<Directory>(Key.MediaDirectory).Value.name).toBe('downloads');
     });
 });

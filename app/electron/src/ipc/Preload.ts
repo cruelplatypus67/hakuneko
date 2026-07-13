@@ -18,6 +18,7 @@ const invokable = new Set<string>([
     'RemoteProcedureCallManager::Stop',
     'RemoteProcedureCallManager::Restart',
     'BloatGuard::Initialize',
+    'PortableStorage::WriteFile',
 ]);
 
 const subscribable = new Set<string>([
@@ -41,4 +42,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
         AssertChannel(subscribable, channel);
         ipcRenderer.on(channel, (_event, ...parameters: JSONArray) => callback(...parameters));
     },
+});
+
+contextBridge.exposeInMainWorld('portableStorage', {
+    writeFile: (segments: string[], data: ArrayBuffer) => ipcRenderer.invoke('PortableStorage::WriteFile', segments, data),
 });

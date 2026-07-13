@@ -3,6 +3,7 @@ import { EngineResourceKey as R, LocaleID } from '../i18n/ILocale';
 import type { IFrontendInfo } from '../frontend/IFrontend';
 import { Info as InfoClassic } from '../frontend/classic/FrontendInfo';
 import { MangaExportFormat } from './exporters/MangaExporterRegistry';
+import { GetPortableDownloadDirectory } from './platform/electron/PortableDirectory';
 
 export const Scope = '*';
 
@@ -27,8 +28,8 @@ export const enum Key {
 
 export async function Initialize(settingsManager: SettingsManager, frontends: IFrontendInfo[]): Promise<void> {
     const settings = settingsManager.OpenScope(Scope);
-    const mediaDirectory = globalThis.ipcRenderer
-        ? await navigator.storage.getDirectory().then(root => root.getDirectoryHandle('downloads', { create: true })).catch(() => null)
+    const mediaDirectory = globalThis.portableStorage
+        ? GetPortableDownloadDirectory()
         : null;
     await settings.Initialize(
         new Choice(
@@ -53,7 +54,8 @@ export async function Initialize(settingsManager: SettingsManager, frontends: IF
             Key.MediaDirectory,
             R.Settings_Global_MediaDirectory,
             R.Settings_Global_MediaDirectoryInfo,
-            mediaDirectory
+            mediaDirectory,
+            !globalThis.portableStorage
         ),
         new Check(
             Key.UseWebsiteSubDirectory,

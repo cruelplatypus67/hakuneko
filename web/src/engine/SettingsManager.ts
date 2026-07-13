@@ -149,8 +149,16 @@ export class Numeric extends Setting<number> {
 
 export class Directory extends Setting<FileSystemDirectoryHandle> {
 
-    constructor(id: string, label: keyof IResource, description: keyof IResource, initial: FileSystemDirectoryHandle) {
+    constructor(id: string, label: keyof IResource, description: keyof IResource, initial: FileSystemDirectoryHandle, private readonly persist = true) {
         super(id, label, description, initial);
+    }
+
+    public override Deserialize(serialized: IValue): void {
+        if(this.persist) super.Deserialize(serialized);
+    }
+
+    public override Serialize(): IValue {
+        return this.persist ? super.Serialize() : null;
     }
 
     /**

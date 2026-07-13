@@ -4,7 +4,9 @@
 
 run:
 	@test -f app/electron/build/main.js -a -f app/electron/build/index.html || $(MAKE) build
-	npm exec -- electron ./app/electron/build --user-data-dir="$(CURDIR)/app/electron/userdata"
+	@mkdir -p dist/downloads
+	@test -d dist/userdata -o ! -d app/electron/userdata || mv app/electron/userdata dist/userdata
+	npm exec -- electron ./app/electron/build --user-data-dir="$(CURDIR)/dist/userdata" --portable-root="$(CURDIR)/dist"
 
 build:
 	npm run build --workspace=app/electron

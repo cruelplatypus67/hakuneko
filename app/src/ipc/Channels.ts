@@ -123,3 +123,11 @@ export namespace BloatGuard {
         Initialize = 'BloatGuard::Initialize',
     }
 }
+
+export namespace PortableStorage {
+    export type Web = never;
+
+    export const enum App {
+        WriteFile = 'PortableStorage::WriteFile',
+    }
+}
