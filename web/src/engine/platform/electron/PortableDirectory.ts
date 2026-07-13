@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention -- Implements the browser File System Access API. */
 class PortableFileHandle {
     public readonly kind = 'file';
 
@@ -38,3 +39,4 @@ class PortableDirectoryHandle {
 export function GetPortableDownloadDirectory(): FileSystemDirectoryHandle {
     return new PortableDirectoryHandle('downloads') as unknown as FileSystemDirectoryHandle;
 }
+/* eslint-enable @typescript-eslint/naming-convention */

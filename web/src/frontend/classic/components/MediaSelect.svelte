@@ -19,6 +19,7 @@
     // Third Party
     import Fuse from 'fuse.js';
     // Svelte
+    import { onDestroy } from 'svelte';
     import { fade } from 'svelte/transition';
     // UI: Components
     import Media from './Media.svelte';
@@ -94,26 +95,10 @@
         );
     });
     let fuse = new Fuse([]);
+    let observedPlugin: MediaContainer<MediaChild>;
 
-    loadPlugin = loadMedias(UI.selectedPlugin);
-    $effect(() => {
-        const previousPlugin = currentPlugin;
-        loadPlugin = Promise.resolve(UI.selectedPlugin);
-        currentPlugin = UI.selectedPlugin;
-        pluginDropdownSelected = currentPlugin?.Identifier;
-        Settings.Plugin.Value = currentPlugin?.Identifier ?? HakuNeko.BookmarkPlugin.Identifier;
-        if (!disablePluginRefresh && !currentPlugin?.IsSameAs(previousPlugin))
-            loadMedias(UI.selectedPlugin);
-        disablePluginRefresh = false;
-    });
-
-
-    async function loadMedias(
-        plugin: MediaContainer<MediaChild>,
-    ): Promise<MediaContainer<MediaChild>> {
-        if (!plugin) return;
-        const loadedmedias =
-            (plugin.Entries.Value as MediaContainer<MediaChild>[]) ?? [];
+    function displayMedias(entries: ReadonlyArray<MediaChild>) {
+        const loadedmedias = entries as MediaContainer<MediaChild>[] ?? [];
         fuse = new Fuse(loadedmedias, {
             keys: ['Title'],
             findAllMatches: true,
@@ -121,7 +106,40 @@
             minMatchCharLength: 1,
             fieldNormWeight: 0,
         });
-        medias = loadedmedias;
+        medias = [...loadedmedias];
+    }
+
+    function observePlugin(plugin?: MediaContainer<MediaChild>) {
+        observedPlugin?.Entries.Unsubscribe(displayMedias);
+        observedPlugin = plugin;
+        observedPlugin?.Entries.Subscribe(displayMedias);
+        displayMedias(observedPlugin?.Entries.Value ?? []);
+    }
+
+    onDestroy(() => observedPlugin?.Entries.Unsubscribe(displayMedias));
+
+    loadPlugin = loadMedias(UI.selectedPlugin);
+    $effect(() => {
+        const previousPlugin = currentPlugin;
+        currentPlugin = UI.selectedPlugin;
+        pluginDropdownSelected = currentPlugin?.Identifier;
+        Settings.Plugin.Value = currentPlugin?.Identifier ?? HakuNeko.BookmarkPlugin.Identifier;
+        loadPlugin = !disablePluginRefresh && !currentPlugin?.IsSameAs(previousPlugin)
+            ? loadMedias(UI.selectedPlugin)
+            : Promise.resolve(UI.selectedPlugin);
+        disablePluginRefresh = false;
+    });
+
+
+    async function loadMedias(
+        plugin: MediaContainer<MediaChild>,
+    ): Promise<MediaContainer<MediaChild>> {
+        if (!plugin) {
+            observePlugin();
+            return;
+        }
+        await plugin.Ready;
+        if(plugin === UI.selectedPlugin) observePlugin(plugin);
         return plugin;
     }
 
@@ -276,7 +294,7 @@
         {#await loadPlugin}
             <div class="loading center">
                 <div><Loading withOverlay={false} /></div>
-                <div>... medias</div>
+                <div>Loading {medias.length} titles...</div>
             </div>
         {:catch error}
             <div class="error">

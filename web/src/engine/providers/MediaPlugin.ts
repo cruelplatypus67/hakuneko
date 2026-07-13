@@ -22,6 +22,8 @@ export abstract class MediaContainer<T extends MediaChild> {
     protected readonly tags = new ObservableArray<Tag, this>([], this);
     protected readonly entries = new ObservableArray<T, this>([], this);
     private readonly updating = new Observable<boolean, this>(false, this);
+    private updatePromise: Promise<void>;
+    public Ready: Promise<void> = Promise.resolve();
 
     constructor(public readonly Identifier: string, public readonly Title: string, public readonly Parent?: MediaContainer<MediaContainer<T>>) {}
 
@@ -47,6 +49,10 @@ export abstract class MediaContainer<T extends MediaChild> {
 
     public get IsUpdating(): IObservable<boolean, MediaContainer<T>> {
         return this.updating;
+    }
+
+    public ReplaceEntries(entries: T[]): void {
+        this.entries.Value = entries;
     }
 
     public *[Symbol.iterator](): Iterator<T> {
@@ -86,17 +92,22 @@ export abstract class MediaContainer<T extends MediaChild> {
 
     protected abstract PerformUpdate(): Promise<T[]>;
 
-    public async Update(): Promise<void> {
-        if(this.updating.Value) {
-            return;
+    public Update(): Promise<void> {
+        if(!this.updatePromise) {
+            this.updatePromise = this.UpdateEntries();
         }
+        return this.updatePromise;
+    }
 
+    private async UpdateEntries(): Promise<void> {
         this.updating.Value = true;
         try {
+            await this.Ready;
             await this.Initialize();
-            this.entries.Value = await this.PerformUpdate();
+            this.ReplaceEntries(await this.PerformUpdate());
         } finally {
             this.updating.Value = false;
+            this.updatePromise = null;
         }
     }
 }

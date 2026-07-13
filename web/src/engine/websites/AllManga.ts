@@ -94,7 +94,12 @@ export default class extends DecoratableMangaScraper {
         for (let page = 1, run = true; run; page++) {
             await Delay(1000);
             const mangas = await this.GetMangasFromPage(page, provider);
-            mangaList.isMissingLastItemFrom(mangas) ? mangaList.push(...mangas) : run = false;
+            if(mangaList.isMissingLastItemFrom(mangas)) {
+                mangaList.push(...mangas);
+                provider.ReplaceEntries(mangaList.slice());
+            } else {
+                run = false;
+            }
         }
         return mangaList;
     }

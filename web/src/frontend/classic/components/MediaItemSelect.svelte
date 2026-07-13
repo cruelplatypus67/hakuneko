@@ -44,18 +44,19 @@
         loadItem = updateMedia(UI.selectedMedia);
     });
 
-    async function updateMedia( media: MediaContainer<MediaChild> ): Promise<MediaContainer<MediaChild>> {
+    async function updateMedia( media: MediaContainer<MediaChild>, refresh = false ): Promise<MediaContainer<MediaChild>> {
         items = [];
         selectedItems = [];
         if (media) {
-            await media?.Update();
+            await media.Ready;
+            if(refresh || media.Entries.Value.length === 0) await media.Update();
             items = media?.Entries.Value as MediaContainer<MediaItem>[];
         }
         return media;
     }
 
     function retryMedia() {
-        loadItem = updateMedia(UI.selectedMedia);
+        loadItem = updateMedia(UI.selectedMedia, true);
     }
 
     $effect(() => {

@@ -92,7 +92,7 @@ export class MangaPlugin extends MediaContainer<Manga> {
         super(scraper.Identifier, scraper.Title);
         this._settings = this.settingsManager.OpenScope(settingsKeyPrefix + this.Identifier);
         this.tags.Value = this.scraper.Tags;
-        this.Prepare();
+        this.Ready = this.Prepare();
     }
 
     private async Prepare() {
@@ -145,6 +145,16 @@ export class Manga extends MediaContainer<Chapter> {
     constructor(private readonly scraper: MangaScraper, parent: MangaPlugin, identifier: string, title: string, ...tags: Tag[]) {
         super(identifier, title, parent);
         this.tags.Value = tags;
+        this.Ready = this.Prepare();
+    }
+
+    private get CacheKey(): string {
+        return `${this.Parent.Identifier}/${this.Identifier}`;
+    }
+
+    private async Prepare(): Promise<void> {
+        const chapters = await this.Parent['storageController'].LoadPersistent<{ id: string, title: string }[]>(Store.MediaLists, this.CacheKey) || [];
+        this.ReplaceEntries(chapters.map(chapter => this.CreateEntry(chapter.id, chapter.title)));
     }
 
     public override get Icon() {
@@ -155,8 +165,10 @@ export class Manga extends MediaContainer<Chapter> {
         return new Chapter(this.scraper, this, identifier, title);
     }
 
-    protected PerformUpdate(): Promise<Chapter[]> {
-        return this.scraper.FetchChapters(this);
+    protected async PerformUpdate(): Promise<Chapter[]> {
+        const entries = await this.scraper.FetchChapters(this);
+        await this.Parent['storageController'].SavePersistent(entries.map(entry => ({ id: entry.Identifier, title: entry.Title })), Store.MediaLists, this.CacheKey);
+        return entries;
     }
 }
 
