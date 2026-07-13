@@ -91,6 +91,7 @@ export abstract class MediaContainer<T extends MediaChild> {
             return;
         }
 
+        this.updating.Value = true;
         try {
             await this.Initialize();
             this.entries.Value = await this.PerformUpdate();

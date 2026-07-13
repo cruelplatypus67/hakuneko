@@ -92,7 +92,7 @@ export default class extends DecoratableMangaScraper {
         // TODO: Use Array.fromAsync
         const mangaList: Manga[] = [];
         for (let page = 1, run = true; run; page++) {
-            await Delay(500);
+            await Delay(1000);
             const mangas = await this.GetMangasFromPage(page, provider);
             mangaList.isMissingLastItemFrom(mangas) ? mangaList.push(...mangas) : run = false;
         }
