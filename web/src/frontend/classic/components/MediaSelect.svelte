@@ -6,6 +6,8 @@
         Search,
         Loading,
         InlineNotification,
+        Select,
+        SelectItem,
     } from 'carbon-components-svelte';
 
     import BookmarkFilled from 'carbon-icons-svelte/lib/BookmarkFilled.svelte';
@@ -24,7 +26,7 @@
     import VirtualList from '../lib/VirtualList.svelte';
     // UI : Stores
     import {Store as UI } from '../stores/Stores.svelte';
-    import { Settings } from '../stores/Settings.svelte';
+    import { GlobalSettings, Settings } from '../stores/Settings.svelte';
     // Hakuneko Engine
     import type {
         MediaContainer,
@@ -35,6 +37,7 @@
     import { FrontendResourceKey as R } from '../../../i18n/ILocale';
     import { resizeBar } from '../lib/actions';
     import type { MediaContainer2 } from '../Types';
+    import { Tags } from '../../../engine/Tags';
 
     // Plugins selection
     let currentPlugin: MediaContainer<MediaChild> = $state();
@@ -58,14 +61,16 @@
                 a.Title.localeCompare(b.Title)
             );
         });
-    const pluginsCombo: ComboBoxItemWithValue[] = [
+    const pluginCategories = Tags.Media.toArray();
+    let selectedPluginCategory = $derived(pluginCategories.find(tag => tag.Title === Settings.PluginCategory.Value));
+    let pluginsCombo: ComboBoxItemWithValue[] = $derived([
         {
             id: HakuNeko.BookmarkPlugin.Identifier,
             text: HakuNeko.BookmarkPlugin.Title,
             value : HakuNeko.BookmarkPlugin,
             isFavorite: true
         },
-        ...orderedPlugins.map((plugin) => {
+        ...orderedPlugins.filter(plugin => !selectedPluginCategory || plugin.Tags.Value.includes(selectedPluginCategory)).map((plugin) => {
             return {
                 id: plugin.Identifier,
                 text: plugin.Title,
@@ -73,7 +78,7 @@
                 isFavorite: pluginsFavorites.includes(plugin.Identifier),
             };
         }),
-    ];
+    ]);
 
     let pluginDropdownSelected: string = $state();
 
@@ -255,6 +260,15 @@
         />
     </div>
 
+    <div id="PluginCategory">
+        <Select labelText={GlobalSettings.Locale[Tags.Media.Title]()} hideLabel size="sm" bind:selected={Settings.PluginCategory.Value}>
+            <SelectItem value="" text={GlobalSettings.Locale[R.Frontend_Plugin_CategoryAll]()} />
+            {#each pluginCategories as category}
+                <SelectItem value={category.Title} text={GlobalSettings.Locale[category.Title]()} />
+            {/each}
+        </Select>
+    </div>
+
     <div id="MediaFilter">
         <Search id="MediaFilterSearch" size="sm" bind:value={mediaNameFilter} />
     </div>
@@ -301,11 +315,12 @@
         height: 100%;
         display: grid;
         grid-template-columns: 1fr 4px;
-        grid-template-rows: 2.2em 2.2em 2.2em 1fr 2em;
+        grid-template-rows: 2.2em 2.2em 2.2em 2.2em 1fr 2em;
         gap: 0.3em 0.3em;
         grid-template-areas:
             'MediaTitle Empty'
             'Plugin Resize'
+            'PluginCategory Resize'
             'MediaFilter Resize'
             'MediaList Resize'
             'MediaCount Resize';
@@ -316,6 +331,9 @@
         grid-area: Plugin;
         display: grid;
         grid-template-columns: 1fr auto;
+    }
+    #PluginCategory {
+        grid-area: PluginCategory;
     }
     #Plugin .dropdown.icon {
         width: 2em;

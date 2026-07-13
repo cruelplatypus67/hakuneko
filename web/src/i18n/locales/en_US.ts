@@ -38,6 +38,7 @@ const translations: VariantResource = {
   Frontend_Plugin_List: 'Plugin list',
   Frontend_Plugin_Select: 'Select a plugin',
   Frontend_Plugin_Selection: 'Plugin selection',
+  Frontend_Plugin_CategoryAll: 'All categories',
   Frontend_Media: 'Media',
   Frontend_Medias: 'Media',
   Frontend_Media_List: 'Media list',

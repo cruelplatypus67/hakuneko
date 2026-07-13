@@ -1,8 +1,9 @@
 import {type LocaleID, FrontendResourceKey as R } from '../../../i18n/ILocale';
-import { Check, Choice, Numeric} from '../../../engine/SettingsManager';
+import { Check, Choice, Numeric } from '../../../engine/SettingsManager';
 import { LoadSettingStore, SettingCountStore, SettingStore } from './storesHelpers.svelte';
 import { Key as GlobalKey, Scope as GlobalScope } from '../../../engine/SettingsGlobal';
 import { GetLocale } from '../../../i18n/Localization';
+import { Tags } from '../../../engine/Tags';
 
 export const enum Key {
     //
@@ -19,6 +20,7 @@ export const enum Key {
     SidenavIconsOnTop = 'sidenav-icons-on-top',
     //
     FuzzySearch ='fuzzy-search',
+    PluginCategory = 'plugin-category',
     //
     ViewerMode = 'viewer-mode',
     ViewerMode_Paginated = 'paginated',
@@ -32,10 +34,12 @@ export const enum Key {
 
 const FrontendClasicScope = 'frontend.classic';
 const FrontendClasicScope_Viewer = 'frontend.classic.viewer';
+const FrontendClasicScope_PluginSelect = 'frontend.classic.plugin-select';
 
 export const globalScopeSettings = HakuNeko.SettingsManager.OpenScope(GlobalScope);
 export const frontendClassicSettings = HakuNeko.SettingsManager.OpenScope(FrontendClasicScope);
 export const frontendClassicSettingsViewer = HakuNeko.SettingsManager.OpenScope(FrontendClasicScope_Viewer);
+const frontendClassicSettingsPluginSelect = HakuNeko.SettingsManager.OpenScope(FrontendClasicScope_PluginSelect);
 
 export async function Initialize(): Promise<void> {
 
@@ -46,6 +50,8 @@ export async function Initialize(): Promise<void> {
         Settings.SidenavIconsOnTop.Setting,
         Settings.FuzzySearch.Setting,
     );
+
+    await frontendClassicSettingsPluginSelect.Initialize(Settings.PluginCategory.Setting);
 
     await frontendClassicSettingsViewer.Initialize(
         Settings.ViewerMode.Setting,
@@ -94,6 +100,15 @@ class UIClassicStore {
         R.Frontend_Classic_Settings_FuzzySearch,
         R.Frontend_Classic_Settings_FuzzySearchInfo,
         false
+    ));
+
+    PluginCategory = new SettingStore<string, Choice>(new Choice(
+        Key.PluginCategory,
+        Tags.Media.Title,
+        Tags.Media.Title,
+        '',
+        { key: '', label: R.Frontend_Plugin_CategoryAll },
+        ...Tags.Media.toArray().map(tag => ({ key: tag.Title, label: tag.Title })),
     ));
 
     ViewerMode = new SettingStore<string, Choice>(new Choice(

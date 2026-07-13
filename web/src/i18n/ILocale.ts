@@ -126,6 +126,7 @@ export enum FrontendResourceKey {
     Frontend_Plugin_List = 'Frontend_Plugin_List',
     Frontend_Plugin_Select = 'Frontend_Plugin_Select',
     Frontend_Plugin_Selection = 'Frontend_Plugin_Selection',
+    Frontend_Plugin_CategoryAll = 'Frontend_Plugin_CategoryAll',
     Frontend_Media = 'Frontend_Media',
     Frontend_Medias = 'Frontend_Medias',
     Frontend_Media_List = 'Frontend_Media_List',
