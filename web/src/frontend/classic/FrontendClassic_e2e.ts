@@ -19,21 +19,15 @@ describe.sequential('Front-End (Classic)', { timeout: 60_000 }, () => {
             );
         });
 
-        it('Should keep the content panel hidden until Home is clicked', async () => {
+        it('Should toggle the content panel', async () => {
             const page = await fixture.GetPage();
             expect(await page.$('main#hakunekoapp > div#Content')).toBeNull();
 
-            await page.evaluate(() => {
-                const links = Array.from(document.querySelectorAll<HTMLElement>('a.bx--side-nav__link'));
-                links.find(link => link.textContent.trim() === 'Home')?.click();
-            });
+            await page.click('button#ContentPanelToggle');
 
             await page.waitForSelector('main#hakunekoapp > div#Content main > div#Home');
 
-            await page.evaluate(() => {
-                const links = Array.from(document.querySelectorAll<HTMLElement>('a.bx--side-nav__link'));
-                links.find(link => link.textContent.trim() === 'Home')?.click();
-            });
+            await page.click('button#ContentPanelToggle');
 
             await page.waitForFunction(() => !document.querySelector('main#hakunekoapp > div#Content'));
         });

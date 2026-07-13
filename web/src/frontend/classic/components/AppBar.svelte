@@ -11,6 +11,8 @@
     import Close from 'carbon-icons-svelte/lib/Close.svelte';
     import Copy from 'carbon-icons-svelte/lib/Copy.svelte';
     import Home from 'carbon-icons-svelte/lib/Home.svelte';
+    import SidePanelClose from 'carbon-icons-svelte/lib/SidePanelClose.svelte';
+    import SidePanelOpen from 'carbon-icons-svelte/lib/SidePanelOpen.svelte';
     import Subtract from 'carbon-icons-svelte/lib/Subtract.svelte';
     import Sidenav from './Sidenav.svelte';
 
@@ -18,9 +20,11 @@
     import { GlobalSettings, Settings } from '../stores/Settings.svelte';
 
     interface Props {
+        contentOpen?: boolean;
         onHome?: () => void;
+        onToggleContent?: () => void;
     };
-    let { onHome }: Props  = $props();
+    let { contentOpen, onHome, onToggleContent }: Props  = $props();
 
     let isSideNavOpen: boolean = $state(false);
 
@@ -87,6 +91,14 @@
         <SkipToContent />
     </div>
     <HeaderUtilities>
+        {#if Settings.ContentPanel.Value}
+            <HeaderGlobalAction
+                id="ContentPanelToggle"
+                on:click={onToggleContent}
+                iconDescription={contentOpen ? 'Hide content panel' : 'Show content panel'}
+                icon={contentOpen ? SidePanelClose : SidePanelOpen}
+            />
+        {/if}
         {#if showWindowControls}
             <HeaderGlobalAction
                 on:click={minimize}

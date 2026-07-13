@@ -42,8 +42,14 @@
 
 <Theme theme={Settings.Theme.Value}>
     <AppBar
+        contentOpen={showContent}
         onHome={() => {
-            showHome = !(showHome && !UI.selectedItem);
+            showHome = true;
+            UI.selectedItem = null;
+            UI.contentscreen = '/';
+        }}
+        onToggleContent={() => {
+            showHome = !showContent;
             UI.selectedItem = null;
             UI.contentscreen = '/';
         }}
@@ -97,7 +103,7 @@
             'Bottom Bottom Content';
     }
     :global(.ui-mode-download) {
-        grid-template-columns: min-content min-content;
+        grid-template-columns: minmax(350px, 1fr) minmax(350px, 1fr);
         grid-template-areas:
             'Media Item'
             'Bottom Bottom';
