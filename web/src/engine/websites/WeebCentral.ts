@@ -12,15 +12,17 @@ function MangaLinkExtractor(meta: HTMLMetaElement, uri: URL) {
 }
 
 const pageScript = `[...document.querySelectorAll('main section img[alt*="Page"]:not([x-show]')].map(image => new URL(image.getAttribute('src'), window.location.origin).href);`;
+// The site hard-caps responses at 32 titles. Keep refreshes to 10 requests; raise this only when a bulk index becomes available.
+const mangaIndexPageLimit = 10;
 
 @Common.MangaCSS(/^{origin}\/series\/[^/]+\/[^/]+$/, 'meta[property="og:title"]', MangaLinkExtractor)
-@Common.MangasMultiPageCSS('article > a.link', Common.PatternLinkGenerator(`/search/data?display_mode=Minimal+Display&limit=32&offset={page}`, 0, 32), 0)
+@Common.MangasMultiPageCSS('article > a.link', Common.PatternLinkGenerator(`/search/data?display_mode=Minimal+Display&limit=32&offset={page}`, 0, 32, mangaIndexPageLimit), 1000)
 @Common.PagesSinglePageJS(pageScript, 1500)
 @Common.ImageAjax()
 export default class extends DecoratableMangaScraper {
 
     public constructor() {
-        super('weebcentral', 'WeebCentral', 'https://weebcentral.com', Tags.Media.Manhwa, Tags.Media.Manhua, Tags.Media.Manga, Tags.Language.English, Tags.Source.Aggregator);
+        super('weebcentral', 'WeebCentral', 'https://weebcentral.com', Tags.Media.Manhwa, Tags.Media.Manhua, Tags.Media.Manga, Tags.Language.English, Tags.Source.Aggregator, Tags.Accessibility.RateLimited);
     }
 
     public override get Icon() {

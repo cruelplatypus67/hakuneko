@@ -10,16 +10,24 @@ export abstract class FetchProvider {
 
     private featureFlags: FeatureFlags;
 
-    protected async ValidateResponse(response: Response): Promise<void> {
-        if (/challenge/i.test(response.headers.get('CF-Mitigated'))) {
+    protected async ValidateResponse(response: Response, retry?: () => Promise<Response>): Promise<Response> {
+        const isCloudflareChallenge = () => /challenge/i.test(response.headers.get('CF-Mitigated'));
+        const isVercelChallenge = () => /challenge/i.test(response.headers.get('X-Vercel-Mitigated'));
+
+        if ((isCloudflareChallenge() || isVercelChallenge()) && retry) {
+            await this.FetchWindowPreloadScript(new Request(response.url), '', '', 0, 60_000, true);
+            response = await retry();
+        }
+        if (isCloudflareChallenge()) {
             throw new Exception(R.FetchProvider_Fetch_CloudFlareChallenge, response.url);
         }
-        if (/challenge/i.test(response.headers.get('X-Vercel-Mitigated'))) {
+        if (isVercelChallenge()) {
             throw new Exception(R.FetchProvider_Fetch_VercelChallenge, response.url);
         }
         if (response.status === 403) {
             throw new Exception(R.FetchProvider_Fetch_Forbidden, response.url);
         }
+        return response;
     }
 
     /**
@@ -229,8 +237,9 @@ export abstract class FetchProvider {
      * @param script - The JavaScript or function that will be evaluated within the browser window
      * @param delay - The time [ms] to wait after the window was fully loaded and before the {@link script} will be injected
      * @param timeout - The maximum time [ms] to wait for the result before a timeout error is thrown (excluding the {@link delay})
+     * @param show - Whether the browser window should remain visible while processing the request
      */
-    public async FetchWindowPreloadScript<T extends void | JSONElement>(request: Request, preload: string, script: string, delay = 0, timeout = 60_000): Promise<T> {
+    public async FetchWindowPreloadScript<T extends void | JSONElement>(request: Request, preload: string, script: string, delay = 0, timeout = 60_000, show = false): Promise<T> {
 
         const invocations: {
             name: string;
@@ -241,7 +250,7 @@ export abstract class FetchProvider {
 
         win.BeforeWindowNavigate.Subscribe(async uri => {
             invocations.push({ name: 'BeforeNavigate', info: `URL: ${uri.href}` });
-            return this.featureFlags.VerboseFetchWindow.Value ? null : win.Hide();
+            return show || this.featureFlags.VerboseFetchWindow.Value ? null : win.Hide();
         });
 
         const destroy = async () => {
@@ -286,13 +295,19 @@ export abstract class FetchProvider {
                             await destroy();
                             resolve(result);
                     }
-                } catch {
+                } catch(error) {
                     await destroy();
+                    reject(error);
                 }
             });
 
             invocations.push({ name: 'Open', info: `Request URL: ${request.url}` });
-            await win.Open(request, this.featureFlags.VerboseFetchWindow.Value, preload);
+            try {
+                await win.Open(request, show || this.featureFlags.VerboseFetchWindow.Value, preload);
+            } catch(error) {
+                await destroy();
+                reject(error);
+            }
         });
     }
 }

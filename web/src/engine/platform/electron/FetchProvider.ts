@@ -59,8 +59,8 @@ export default class extends FetchProvider {
     }
 
     async Fetch(request: Request): Promise<Response> {
+        const retryRequest = request.clone();
         const response = await fetch(request);
-        await super.ValidateResponse(response);
-        return response;
+        return super.ValidateResponse(response, () => fetch(retryRequest));
     }
 }

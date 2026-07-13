@@ -49,14 +49,15 @@ export function StaticLinkGenerator(...endpoints: string[]): LinkGenerator {
 }
 
 /**
- * Creates an infinite link generator that will compose URLs based on a sequence of numbers.
+ * Creates a bounded or infinite link generator that will compose URLs based on a sequence of numbers.
  * @param endpoint - A relative path for the website's base URL or an absolute URL containing the optional placeholders `{id}` which is replaced by the media containers identifier and `{page}` which is replaced by an incrementing number
  * @param start - The start for the sequence of incremental numbers which are applied to the {@link endpoint} pattern
  * @param increment - The amount by which the sequence shall be incremented for each iteration
+ * @param count - The maximum number of links to generate
  */
-export function PatternLinkGenerator<T extends MediaContainer<MediaChild>>(endpoint: string, start = 1, increment = 1): LinkGenerator<T> {
+export function PatternLinkGenerator<T extends MediaContainer<MediaChild>>(endpoint: string, start = 1, increment = 1, count = Number.POSITIVE_INFINITY): LinkGenerator<T> {
     return function* (this: MangaScraper, media: T): Generator<URL> {
-        for (let page = start; true; page += increment) {
+        for (let page = start, index = 0; index < count; page += increment, index++) {
             yield new URL(endpoint.replace('{id}', media.Identifier).replace('{page}', `${page}`), this.URI);
         }
     };

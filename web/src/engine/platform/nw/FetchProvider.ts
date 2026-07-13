@@ -131,9 +131,12 @@ export default class extends FetchProvider {
 
     public async Fetch(request: Request): Promise<Response> {
         // Fetch API defaults => https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+        const retryRequest = request.clone();
         await UpdateCookieHeader(request.url, request.headers);
         const response = await fetch(request);
-        await super.ValidateResponse(response);
-        return response;
+        return super.ValidateResponse(response, async () => {
+            await UpdateCookieHeader(retryRequest.url, retryRequest.headers);
+            return fetch(retryRequest);
+        });
     }
 }
