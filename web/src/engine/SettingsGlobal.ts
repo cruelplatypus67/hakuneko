@@ -123,7 +123,9 @@ export async function Initialize(settingsManager: SettingsManager, frontends: IF
             Key.RPCSecret,
             R.Settings_Global_RPCSecret,
             R.Settings_Global_RPCSecretInfo,
-            'Connection#Secret'
+            crypto.randomUUID()
         ),
     );
+    const rpcSecret = settings.Get<Text>(Key.RPCSecret);
+    if(rpcSecret.Value === 'Connection#Secret') rpcSecret.Value = crypto.randomUUID();
 }

@@ -1,5 +1,5 @@
 import { createServer, type Server, type IncomingMessage } from 'node:http';
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { CreateServer } from 'websocket-rpc/server';
 import type { Contract } from './Contract';
 
@@ -24,7 +24,8 @@ export class RPCServer {
             .on('upgrade', this.Authorize.bind(this));
         this.websocket = CreateServer(contract, {
             server: this.httpd,
-            path: endpoint
+            path: endpoint,
+            maxPayload: 64 * 1024,
         });
     }
 
@@ -49,7 +50,7 @@ export class RPCServer {
             this.token = createHash('SHA256').update(secret).digest('hex').toUpperCase();
             this.allowedOrigins = allowedOrigins;
             await this.Close();
-            this.httpd.listen(port);
+            this.httpd.listen(port, '127.0.0.1');
         });
     }
 
@@ -68,7 +69,10 @@ export class RPCServer {
             if(!/websocket/i.test(request.headers.upgrade ?? '')) {
                 throw new AccessDeniedError(`Request with upgrade '${request.headers.upgrade}' are not allowed!`);
             }
-            if(new URL(request.url ?? '', 'http://' + request.headers.host).searchParams.get('token') !== this.token) {
+            const suppliedToken = new URL(request.url ?? '', 'http://' + request.headers.host).searchParams.get('token');
+            const expected = Buffer.from(this.token ?? '');
+            const supplied = Buffer.from(suppliedToken ?? '');
+            if(expected.length === 0 || expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) {
                 // TODO: Show forbidden response with helpful error message?
                 //request.end(403);
                 throw new AccessDeniedError('Requests with missing or invalid token are not allowed!');
