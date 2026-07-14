@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { purge, run } from '../../tools.mjs';
 
-const dirBuild = path.resolve('build');
+const dirBuild = path.resolve('../../dist/app');
 const pkgFile = 'package.json';
 const pkgConfig = JSON.parse(await fs.readFile(pkgFile));
 const targetFile = path.resolve(dirBuild, pkgFile);

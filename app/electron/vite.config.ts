@@ -5,7 +5,7 @@ export default defineConfig({
     build: {
         ssr: true,
         emptyOutDir: false,
-        outDir: resolve(__dirname, 'build'),
+        outDir: resolve(__dirname, '../../dist/app'),
         lib: {
             entry: [
                 resolve(__dirname, 'src', 'Main.ts'),
